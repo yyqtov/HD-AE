@@ -57,7 +57,7 @@ def send_telegram_notification(status, old_due, new_due):
         else:
             masked_email = f"{name}@{domain}"
     else:
-        masked_email = EMAIL[:10] + '****' 
+        masked_email = EMAIL
 
     text = (
         f"🎉 HidenCloud 续期通知\n\n"
