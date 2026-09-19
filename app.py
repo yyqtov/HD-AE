@@ -47,9 +47,12 @@ def send_telegram_notification(status, old_due, new_due):
     now = time.strftime("%Y-%m-%d %H:%M:%S", local_time)
     if '@' in EMAIL:
         name, domain = EMAIL.split('@', 1)
-        masked_email = f"{name[:2]}****{name[-2:]}@{domain}" if len(name) > 4 else f"{name}@{domain}"
+        if len(name) > 4:
+            masked_email = f"{name[:2]}****{name[-2:]}@{domain}"
+        else:
+            masked_email = f"{name}@{domain}"
     else:
-        masked_email = (EMAIL[:2] + '****') if EMAIL else "未知账号"
+        masked_email = EMAIL
 
     text = (
         f"🎉 HidenCloud 续期通知\n\n"
@@ -271,8 +274,10 @@ def main():
     with sync_playwright() as p:
         try:
             current_ip = get_current_ip(PROXY_SERVER)
-            log(f"🎯 出口IP: {current_ip}")
-
+            parts = current_ip.split('.')
+            masked_ip = '.'.join(parts[:3] + ['x']) if len(parts) == 4 else current_ip
+            log(f"🎯 出口IP: {masked_ip}")
+            
             log("🚀 启动浏览器...")
             browser = p.chromium.launch(
                 channel="chrome",
