@@ -63,6 +63,18 @@ def get_current_ip(proxy_server=None):
         log(f"❌ 获取出口IP失败: {e}")
         return "获取失败"
 
+def mask_ip(ip):
+    """日志中的IP打码：IPv4 隐藏最后一段，IPv6 只保留前两段"""
+    ip = (ip or "").strip()
+    if "." in ip and ":" not in ip:
+        parts = ip.split(".")
+        if len(parts) == 4:
+            return ".".join(parts[:3] + ["x"])
+    if ":" in ip:
+        parts = ip.split(":")
+        return ":".join(parts[:2]) + ":****"
+    return ip
+
 def send_telegram_notification(status, old_due, new_due):
     """发送 Telegram 通知"""
     if not TG_BOT_TOKEN or not TG_CHAT_ID:
@@ -579,15 +591,15 @@ def renew_service(page):
         create_btn = page.locator('button:has-text("Create Invoice")')
 
         modal_opened = False
-        for i in range(6):
+        for i in range(3):
             try:
-                renew_btn.wait_for(state="visible", timeout=10000)
+                renew_btn.wait_for(state="visible", timeout=30000)
                 renew_btn.scroll_into_view_if_needed()
                 log(f"🖱️ 第 {i+1} 次尝试点击 'Renew'...")
                 renew_btn.click()
 
                 # 等待一小段时间，检测是否出现“未到续期时间”弹窗
-                time.sleep(2)
+                time.sleep(3)
                 page_text = page.locator("body").inner_text()
                 if "Renewal Restricted" in page_text or "can only renew" in page_text.lower():
                     log("⚠️ 未到续期时间，无法续期。")
@@ -596,7 +608,7 @@ def renew_service(page):
 
                 log("🖲️ 等待弹窗出现...")
                 try:
-                    create_btn.wait_for(state="visible", timeout=5000)
+                    create_btn.wait_for(state="visible", timeout=30000)
                     modal_opened = True
                     log("✅ 弹窗已成功弹出！")
                     break
@@ -607,7 +619,7 @@ def renew_service(page):
                         log("✅ 弹窗已弹出（先出现 Turnstile 验证）！")
                         break
                     log("⚠️ 弹窗未出现，可能是点击未响应，准备重试...")
-                    time.sleep(2)
+                    time.sleep(3)
             except Exception as e:
                 log(f"❌ 点击尝试出错: {e}")
 
@@ -702,7 +714,7 @@ def main():
 
             # 获取当前出口ip
             current_ip = get_current_ip(PROXY_SERVER)
-            log(f"🎯 当前出口IP: {current_ip}")
+            log(f"🎯 当前出口IP: {mask_ip(current_ip)}")
 
             log("🚀 启动浏览器...")
             browser = p.chromium.launch(
